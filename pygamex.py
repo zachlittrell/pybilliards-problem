@@ -29,14 +29,27 @@ class Line:
 
 
 class App:
+
+  def resolve_collision(self, space, arbiter, *args, **kwargs):
+    objecta, objectb = arbiter.shapes
+    if objecta in self._collidables:
+      self._collidables[objecta].on_collision(objectb, arbiter)
+
+    if objectb in self._collidables:
+      self._collidables[objectb].on_collision(objecta, arbiter)
+
+
+
   def __init__(self, width=600, height=600):
     self._running = False
     self._initialized = False
     self._width = width
     self._height = height
     self._space = pymunk.Space()
-    #self._space.gravity = (0,-1)
+    self._space.add_collision_handler(0,0, 
+	post_solve=self.resolve_collision)
     self._widgets = []
+    self._collidables = {}
 
   def init(self):
     pygame.init()
@@ -44,8 +57,14 @@ class App:
     self._running = True
     self._initialized = True
 
-  def add_widget(self,widget,is_static=True):
+  def has_collision_event(widget):
+    return False
+
+  def add_widget(self,widget,is_static=True,listening_to_collision=False):
     self._widgets.append(widget)
+    if listening_to_collision:
+      self._collidables[widget.shape] = widget
+
     if is_static:
       self._space.add(widget.shape)
     else:
